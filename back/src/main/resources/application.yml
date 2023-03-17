@@ -4,7 +4,7 @@ spring:
       max-file-size: 100MB
       max-request-size: 1000MB
   datasource:
-    url: jdbc:mysql://49.232.222.169:3306/temp?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://49.232.222.169:3306/temp2?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: temp
     password: temp123
     driver-class-name: com.mysql.cj.jdbc.Driver
