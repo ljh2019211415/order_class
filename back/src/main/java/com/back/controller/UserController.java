@@ -4,6 +4,7 @@ package com.back.controller;
 import com.back.common.lang.Result;
 import com.back.entity.*;
 import com.back.mapper.*;
+import com.back.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,10 +45,14 @@ public class UserController {
     @Autowired
     private RecordMapper recordMapper;
 
+    @Autowired
+    private UserService userService;
+
 
     @PostMapping("/sign")
     public Object sign(@RequestBody User user){
         try{
+
             userMapper.insert(user);
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,28 +62,37 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public Object login(@RequestBody User user){
-        int adminLevel=0;
-        try{
-            User user1 = userMapper.selectById(user.getId());
-            if(user.getPassword()!=user1.getPassword())
-                return Result.fail(404,"密码错误",null);
-            adminLevel=user1.getAdmin();
+    public Object login(@RequestBody User user) {
+        int adminLevel = 0;
+        User user1;
+        try {
+
+            LambdaQueryWrapper<User> lqw = new LambdaQueryWrapper<>();
+            lqw.eq(User::getUsername, user.getUsername());
+            user1 = userMapper.selectOne(lqw);
+
+            if (!user.getPassword().equals(user1.getPassword()))
+                return Result.fail(404, "密码错误", null);
+            adminLevel = user1.getAdmin();
+            return Result.succ(user1);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("登陆失败");
         }
-        return Result.succ(adminLevel);
+
     }
 
     @PostMapping("/forgetPwd")
     public Object forgetPwd(@RequestBody User user){
         try{
-            User user1 = userMapper.selectById(user.getId());
-            if(user1.getAnswer()!=user.getAnswer())
+            LambdaQueryWrapper<User> lqw = new LambdaQueryWrapper<>();
+            lqw.eq(User::getUsername, user.getUsername());
+            User user1 = userMapper.selectOne(lqw);
+            user1.setPassword(user.getPassword());
+            if(!user1.getAnswer().equals(user.getAnswer()))
                 return Result.fail(404,"密保错误",null);
             else
-                userMapper.updateById(user);
+                userMapper.updateById(user1);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("forgetPwd失败");
@@ -141,7 +155,7 @@ public class UserController {
         try{
             User user = userMapper.selectById(record.getUserId());
             if(user.getAdmin()==0)
-                Result.fail(404,"当前账户不是督导员，没有打分权限",null);
+                return Result.fail(404,"当前账户不是督导员，没有打分权限",null);
             else
                 recordMapper.insert(record);
         } catch (Exception e) {
@@ -237,6 +251,7 @@ public class UserController {
                     .eq(t.getId()!=null,Record::getTeacherId,t.getId())
                     .orderByDesc(Record::getDate);
             List<Record> records = recordMapper.selectList(lqw);
+            System.out.println(records);
             for (Record record : records) {
                 scoreTable s=new scoreTable();
                 User user = userMapper.selectById(record.getUserId());
@@ -255,6 +270,7 @@ public class UserController {
 
                 s.setScore(record.getScore());
 
+                scoreTables.add(s);
             }
 
             return Result.succ(scoreTables);
